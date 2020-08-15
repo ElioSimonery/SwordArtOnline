@@ -1,0 +1,110 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public class Stage1_Dungeon : DungeonBase
+{
+	public GameObject characterLocationObj;
+	public GameObject bossLocationObj;
+
+	private float timer;
+	private List<MissionBase> missions;
+	private int currentMission = 0;
+
+	protected override void Start()
+	{
+		init ();
+		SpawnAt (GameManager.PlayerObject, characterLocationObj.transform.position);
+		SpawnAt (Boss, bossLocationObj.transform.position);
+
+		// Spawn Normal Monsters
+		SpawnDungeonMonsters ();
+		// Spawn Rare Monsters
+		SpawnRareMonsters ();
+	}
+
+	public override void Update ()
+	{
+		if (missions.Count <= currentMission)
+			return;
+		if(!missions[currentMission].isInProgress)
+		{
+			timer += Time.deltaTime;
+			if (timer >= missions[currentMission].startTime) 
+			{
+				timer = 0;
+				missions[currentMission].start ();
+			}
+		}
+		else // mission check.
+		{
+			if(missions[currentMission].checkMission())
+				currentMission++;
+		}
+	}
+
+	public override void init()
+	{
+		base.init ();
+		missions = new List<MissionBase> ();
+		missions.Add (new MonologMission() );
+		GameManager.missionCleared = false;
+		NotificationManager.getInstance ().toast ("- Aincrad 1st floor -");
+	}
+
+	
+	public class MonologMission : MissionBase
+	{
+		// 애니 캡쳐 스프라이트 넣기.
+
+		private string[,] kirito = {
+			{"키리토","'이 게임이 시작되고 어언 한 달. \n아무도 1층을 돌파하지 못했다. \n그 사이에 2000명의 플레이어가 죽었다.'"},
+			{"키리토","베타 테스트부터 꾸준히 플레이 한 나조차 1층 보스의 방까지 도착하지 못했다. \n드디어 오늘 1층을 돌파하기 위한 회의가 열린다."}
+		};
+		 
+		private string[] diabell =
+			"디어벨", "이렇게 많은 플레이어들이 모여줘서 정말 고마워. \n오늘은 1층을 클리어하고자 파티를 결성하고자 해. \n일단 여기 모인 플레이어들끼리 여섯 명씩 파티를 결성해보자.";
+		
+		private string narration = "(모두 모여들어 파티를 결성하고 있으나, 키리토는 같이 파티를 결성할 사람이 없다. \n옆에 홀로 앉아 빨간 망토로 얼굴과 몸을 가리고 있는 한 검객이 보인다. \n슬금슬금 다가가는 키리토.)";
+		
+		private string[,] script1 = {
+			{"키리토","너도 파티 자리를 얻지 못했니? \n괜찮다면 나랑 파티를 맺지 않겠어?"},
+			{"???","얻지 못한게 아냐, 모두가 서로 동료인 느낌이라 사양했던 것 뿐.."},
+			{"키리토","솔로 플레이어인가? 괜찮다면 나랑 짜지 않겠어? \n보스는 혼자 쓰러뜨리지 못한다고 하니까.. \n딱 이번만 일시적으로.."},
+			{"???","(..끄덕)"}
+		};
+		
+		public override void start()
+		{
+			base.start ();
+			
+			SpeechController.getInstance ().skipAvailable (false);
+			// Kirito
+			SpeechController.getInstance ().pushPrint(
+				kirito[0,0],
+				kirito[0,1],
+				(Resources.Load("portraits/DeveloperPortraits") as GameObject).GetComponent<UIAtlas>(),
+				"1");
+
+			// Bell
+			SpeechController.getInstance ().pushPrint(
+				diabell[0],
+				diabell[1],
+				(Resources.Load("portraits/DeveloperPortraits") as GameObject).GetComponent<UIAtlas>(),
+				"1");
+			// narration
+			SpeechController.getInstance ().pushNarration(narration);
+			// script
+			SpeechController.getInstance ().pushPrints (script1.GetLength, script1, null, null);
+			
+		}
+
+		public override bool checkMission()
+		{
+			return true;
+		}
+	}
+
+
+
+}
